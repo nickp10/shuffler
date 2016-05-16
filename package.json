@@ -1,0 +1,20 @@
+{
+  "name": "shuffler",
+  "version": "1.0.0",
+  "description": "Shuffles multiple Google Play Music playlists together",
+  "main": "shuffler.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nickp10/shuffler.git"
+  },
+  "author": "nickp10@hotmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nickp10/shuffler/issues"
+  },
+  "homepage": "https://github.com/nickp10/shuffler#readme",
+  "dependencies": {
+    "named-argv": "^0.3.0",
+    "playmusic": "^2.1.1"
+  }
+}
