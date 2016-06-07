@@ -2,6 +2,9 @@ var argv = require("named-argv");
 var PlayMusic = require("playmusic");
 var Promise = require("promise");
 
+const pm = new PlayMusic();
+const cache = {};
+
 function flattenArray(arr) {
 	const flat = [];
 	if (Array.isArray(arr)) {
@@ -9,7 +12,7 @@ function flattenArray(arr) {
 			const flatSubArray = flattenArray.call(this, arr[i]); 
 			flat.push.apply(flat, flatSubArray);
 		}
-	} else {
+	} else if (arr) {
 		flat.push(arr);
 	}
 	return flat;
@@ -17,57 +20,78 @@ function flattenArray(arr) {
 
 function getAllPlaylistTracks(nextPageToken) {
 	return new Promise((resolve, reject) => {
-		pm.getPlayListEntries({nextPageToken: nextPageToken}, (error, data) => {
-			if (error) {
-				reject("The tracks associated with each playlist could not be retrieved.");
-			} else {
-				const nextPageToken = data.nextPageToken;
-				const tracks = data.data.items;
-				if (nextPageToken) {
-					getAllPlaylistTracks(nextPageToken).done((nextPageTracks) => {
-						resolve(tracks.concat(nextPageTracks));
-					}, (error) => {
-						reject(error);
-					});
+		if (cache.playlistTracks) {
+			return cache.playlistTracks;
+		} else {
+			pm.getPlayListEntries({nextPageToken: nextPageToken}, (error, data) => {
+				if (error) {
+					reject("The tracks associated with each playlist could not be retrieved.");
 				} else {
-					resolve(tracks);
+					const nextPageToken = data.nextPageToken;
+					const tracks = data.data.items;
+					if (nextPageToken) {
+						getAllPlaylistTracks(nextPageToken).done((nextPageTracks) => {
+							cache.playlistTracks = tracks.concat(nextPageTracks);
+							resolve(cache.playlistTracks);
+						}, (error) => {
+							reject(error);
+						});
+					} else {
+						cache.playlistTracks = tracks;
+						resolve(tracks);
+					}
 				}
-			}
-		});
+			});
+		}
+	});
+}
+
+function getAllPlaylists() {
+	return new Promise((resolve, reject) => {
+		if (cache.playlists) {
+			resolve(cache.playlists);
+		} else {
+			pm.getPlayLists((error, data) => {
+				if (error) {
+					reject("The playlists for the account could not be retrieved.");
+				} else {
+					cache.playlists = data.data.items;
+					resolve(cache.playlists);
+				}
+			});
+		}
 	});
 }
 
 function getPlaylistsByName(playlistNames) {
 	return new Promise((resolve, reject) => {
-		pm.getPlayLists((error, data) => {
-			if (error) {
-				reject("The playlists for the account could not be retrieved.");
-			} else {
-				const playlists = [];
-				let errorPlaylistName = undefined;
-				for (let i = 0; i < playlistNames.length; i++) {
-					const playlistName = playlistNames[i];
-					let foundPlaylist = undefined;
-					for (let j = 0; j < data.data.items.length; j++) {
-						const playlistItem = data.data.items[j];
-						if (playlistItem.name === playlistName) {
-							foundPlaylist = playlistItem;
-							break;
-						}
-					}
-					if (foundPlaylist) {
-						playlists.push(foundPlaylist);
-					} else {
-						errorPlaylistName = playlistName;
+		getAllPlaylists().then((allPlaylists) => {
+			const playlists = [];
+			let errorPlaylistName = undefined;
+			for (let i = 0; i < playlistNames.length; i++) {
+				const playlistName = playlistNames[i];
+				let foundPlaylist = undefined;
+				for (let j = 0; j < allPlaylists.length; j++) {
+					const playlistItem = allPlaylists[j];
+					if (playlistItem.name === playlistName) {
+						foundPlaylist = playlistItem;
 						break;
 					}
 				}
-				if (errorPlaylistName) {
-					reject("Could not find the specified playlist: " + errorPlaylistName);
+				if (foundPlaylist) {
+					playlists.push(foundPlaylist);
 				} else {
-					resolve(playlists);
+					errorPlaylistName = playlistName;
+					break;
 				}
 			}
+			if (errorPlaylistName) {
+				reject("Could not find the specified playlist: " + errorPlaylistName);
+			} else {
+				resolve(playlists);
+			}
+		}, (error) => {
+			reject(error);
 		});
 	});
 }
@@ -85,9 +109,50 @@ function populatePlaylistTracks(playlists) {
 	});
 }
 
+function getOutputPlaylistNames(playlistsNeeded) {
+	return new Promise((resolve, reject) => {
+		getAllPlaylists().done((allPlaylists) => {
+			const needsIdentifier = playlistsNeeded > output.length;
+			const playlistNames = [];
+			for (let i = 0; i < playlistsNeeded; i++) {
+				const outputName = output[i % output.length];
+				const identifier = Math.ceil((i + 1) / output.length);
+				const playlistName = needsIdentifier ? outputName + " (" + identifier + ")" : outputName;
+				if (!overwrite) {
+					if (allPlaylists.filter((p) => p.name === playlistName).length > 0) {
+						reject("A playlist with the name of '" + playlistName + "' already exists. Specify the -overwrite argument to overwrite the playlist.");
+						return;
+					}
+				}
+				playlistNames.push(playlistName);
+			}
+			resolve(playlistNames);
+		}, (error) => {
+			reject(error);
+		});
+	});
+}
+
+function getUniqueTracks(playlists) {
+	const flags = {};
+	const tracks = [];
+	playlists.forEach((playlist) => {
+		playlist.tracks.forEach((track) => {
+			if (!flags[track.trackId]) {
+				flags[track.trackId] = true;
+				tracks.push(track);
+			}
+		});
+	});
+	return tracks;
+}
+
+const maxTracksPerPlaylist = 550;
 const email = argv.opts.email;
 const password = argv.opts.password;
-const input = argv.opts.input;
+const overwrite = argv.opts.overwrite === true;
+let input = argv.opts.input;
+let output = argv.opts.output;
 if (!email) {
 	console.error("The -email argument must be supplied.");
 	process.exit();
@@ -105,15 +170,26 @@ if (input.length === 0) {
 	console.error("At least one -input playlist must be supplied.");
 	process.exit();
 }
+output = flattenArray(output);
+if (output.length === 0) {
+	output = input.map((i) => i + " (shuffler)");
+}
 
-const pm = new PlayMusic();
 pm.init({email: email, password: password}, (initError) => {
 	if (initError) {
 		console.error("Authentication failed. Please check the email and password supplied.");
 	} else {
 		getPlaylistsByName(input).done((playlists) => {
 			populatePlaylistTracks(playlists).done(() => {
-				
+				const tracks = getUniqueTracks(playlists);
+				const playlistsNeeded = Math.ceil(tracks.length / maxTracksPerPlaylist);
+				getOutputPlaylistNames(playlistsNeeded).done((playlistNames) => {
+					playlistNames.forEach((name) => {
+						console.log(name);
+					});
+				}, (error) => {
+					console.error(error);
+				});
 			}, (error) => {
 				console.error(error);
 			});
