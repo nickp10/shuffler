@@ -125,7 +125,7 @@ function getOrCreatePlaylist(playlistName) {
 							// Give Google enough time to propagate the deleted tracks
 							setTimeout(() => {
 								resolve(playlists[0]);
-							}, 10000);
+							}, 15000);
 						}
 					});
 				}
