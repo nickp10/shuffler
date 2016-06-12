@@ -21,7 +21,7 @@ function flattenArray(arr) {
 function getAllPlaylistTracks(nextPageToken) {
 	return new Promise((resolve, reject) => {
 		if (cache.playlistTracks) {
-			return cache.playlistTracks;
+			resolve(cache.playlistTracks);
 		} else {
 			pm.getPlayListEntries({nextPageToken: nextPageToken}, (error, data) => {
 				if (error) {
@@ -109,6 +109,59 @@ function populatePlaylistTracks(playlists) {
 	});
 }
 
+function getOrCreatePlaylist(playlistName) {
+	return new Promise((resolve, reject) => {
+		getPlaylistsByName([playlistName]).done((playlists) => {
+			populatePlaylistTracks(playlists).done(() => {
+				const tracksToRemove = flattenArray(playlists.map(playlist => playlist.tracks));
+				const ids = tracksToRemove.map(track => track.id);
+				if (ids.length === 0) {
+					resolve(playlists[0]);
+				} else {
+					pm.removePlayListEntry(ids, (error, data) => {
+						if (error) {
+							reject("The playlist could not be cleared of existing tracks: " + playlistName);
+						} else {
+							// Give Google enough time to propagate the deleted tracks
+							setTimeout(() => {
+								resolve(playlists[0]);
+							}, 10000);
+						}
+					});
+				}
+			}, (error) => {
+				reject(error);
+			});
+		}, (error) => {
+			pm.addPlayList(playlistName, (error, data) => {
+				if (error) {
+					reject("The playlist could not be created: " + playlistName);
+				} else {
+					cache.playlists = undefined;
+					getOrCreatePlaylist(playlistName).done((playlist) => {
+						resolve(playlist);
+					}, (error) => {
+						reject(error);
+					});
+				}
+			});
+		});
+	});
+}
+
+function addTracksToPlaylist(playlist, tracks) {
+	return new Promise((resolve, reject) => {
+		const trackIds = tracks.map((track) => track.trackId);
+		pm.addTrackToPlayList(trackIds, playlist.id, (error, data) => {
+			if (error) {
+				reject(error);
+			} else {
+				resolve(data);
+			}
+		});
+	});
+}
+
 function getOutputPlaylistNames(playlistsNeeded) {
 	return new Promise((resolve, reject) => {
 		getAllPlaylists().done((allPlaylists) => {
@@ -147,7 +200,42 @@ function getUniqueTracks(playlists) {
 	return tracks;
 }
 
-const maxTracksPerPlaylist = 550;
+function shuffleTracks(tracks) {
+	let currentIndex = tracks.length;
+	while (currentIndex !== 0) {
+		const randomIndex = Math.floor(Math.random() * currentIndex);
+		currentIndex--;
+		const temporaryValue = tracks[currentIndex];
+		tracks[currentIndex] = tracks[randomIndex];
+		tracks[randomIndex] = temporaryValue;
+	}
+	return tracks;
+}
+
+function partitionTracks(tracks, playlistsNeeded) {
+	const partitions = [];
+	for (let i = 0; i < playlistsNeeded; i++) {
+		const startIndex = i * maxTracksPerPlaylist;
+		partitions[i] = tracks.slice(startIndex, startIndex + maxTracksPerPlaylist);
+	}
+	return partitions;
+}
+
+function shufflePlaylist(playlistName, playlistPartition) {
+	return new Promise((resolve, reject) => {
+		getOrCreatePlaylist(playlistName).done((playlist) => {
+			addTracksToPlaylist(playlist, playlistPartition).done(() => {
+				resolve();
+			}, (error) => {
+				reject(error);
+			});
+		}, (error) => {
+			reject(error);
+		});
+	});
+}
+
+const maxTracksPerPlaylist = 1000;
 const email = argv.opts.email;
 const password = argv.opts.password;
 const overwrite = argv.opts.overwrite === true;
@@ -178,23 +266,37 @@ if (output.length === 0) {
 pm.init({email: email, password: password}, (initError) => {
 	if (initError) {
 		console.error("Authentication failed. Please check the email and password supplied.");
+		process.exit();
 	} else {
 		getPlaylistsByName(input).done((playlists) => {
 			populatePlaylistTracks(playlists).done(() => {
-				const tracks = getUniqueTracks(playlists);
+				const tracks = shuffleTracks(getUniqueTracks(playlists));
 				const playlistsNeeded = Math.ceil(tracks.length / maxTracksPerPlaylist);
 				getOutputPlaylistNames(playlistsNeeded).done((playlistNames) => {
-					playlistNames.forEach((name) => {
-						console.log(name);
+					const playlistPartitions = partitionTracks(tracks, playlistsNeeded);
+					let partitionIndex = 0;
+					const allPromises = playlistNames.map((playlistName) => {
+						const playlistPartition = playlistPartitions[partitionIndex++];
+						return shufflePlaylist(playlistName, playlistPartition);
+					});
+					Promise.all(allPromises).done(() => {
+						console.log("Playlists have been shuffled.");
+						process.exit();
+					}, (error) => {
+						console.error(error);
+						process.exit();
 					});
 				}, (error) => {
 					console.error(error);
+					process.exit();
 				});
 			}, (error) => {
 				console.error(error);
+				process.exit();
 			});
 		}, (error) => {
 			console.error(error);
+			process.exit();
 		});
 	}
 });
