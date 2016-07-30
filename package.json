@@ -15,7 +15,7 @@
   "homepage": "https://github.com/nickp10/shuffler#readme",
   "dependencies": {
     "named-argv": "^0.3.0",
-    "playmusic": "https://github.com/jamon/playmusic/archive/ac99c14d3c1147bd74848a27d1766aae44123a16.tar.gz",
+    "playmusic": "git+https://github.com/jamon/playmusic.git#07d7b62efba772d014b6d19093f20a1aa562db9b",
     "promise": "^7.1.1"
   }
 }
