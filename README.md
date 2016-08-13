@@ -34,7 +34,7 @@ _Required._ Specifies the email address to login with.
 
 **-p / --password**
 
-_Required._ Specifies the password to login wih.
+_Required._ Specifies the password to login with.
 
 
 **-i / --input**
@@ -50,3 +50,7 @@ _Optional._ The names to create the shuffled playlists with. Multiple playlists 
 **--overwrite**
 
 _Optional._ Defaults to false. If any of the output playlists already exists, then they this flag specifies if they will be overwritten or if the script will stop. No value needs to be specified with this option: `--overwrite`
+
+Attribution
+----
+Thanks to the [Node-JS Google Play Music API](https://github.com/jamon/playmusic) node module for making this script possible.
