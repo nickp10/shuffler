@@ -1,8 +1,8 @@
 {
   "name": "shuffler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shuffles multiple Google Play Music playlists together",
-  "main": "shuffler.js",
+  "main": "build/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nickp10/shuffler.git"
@@ -13,9 +13,22 @@
     "url": "https://github.com/nickp10/shuffler/issues"
   },
   "homepage": "https://github.com/nickp10/shuffler#readme",
+  "scripts": {
+    "compile": "gulp compile",
+    "gulp": "gulp",
+    "setup": "npm install && typings install && gulp compile",
+    "setup-dev": "npm install && typings install",
+    "typings": "typings"
+  },
   "dependencies": {
-    "named-argv": "^0.3.0",
+    "argv": "0.0.2",
     "playmusic": "git+https://github.com/jamon/playmusic.git#07d7b62efba772d014b6d19093f20a1aa562db9b",
     "promise": "^7.1.1"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^2.13.6",
+    "typescript": "^1.8.10",
+    "typings": "^1.3.2"
   }
 }

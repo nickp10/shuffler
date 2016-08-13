@@ -12,5 +12,40 @@ Developer Setup
 ----
 1. Install Node.js
 	* Manual install: http://www.nodejs.org
-	* Chocolatey: `choco install nodejs.install`
-1. Install the project specific node modules: `npm install`
+	* Chocolatey (for Windows): `choco install nodejs.install`
+1. Run the developer setup script: `npm run setup-dev`
+
+End-User Usage
+----
+Note: I do not plan on making this end-user friendly with a GUI.
+1. Install Node.js
+	* Manual install: http://www.nodejs.org
+	* Chocolatey (for Windows): `choco install nodejs.install`
+1. Run the setup script: `npm run setup`
+1. Run the script `node build/index.js -e <EMAIL> -p <PASSWORD> -i <PLAYLIST>`
+
+Script Options
+----
+**-e / --email**
+
+_Required._ Specifies the email address to login with. 
+
+
+**-p / --password**
+
+_Required._ Specifies the password to login wih.
+
+
+**-i / --input**
+
+_Required._ The names of the playlists to shuffle. Multiple playlists require multiple options defined: `-i "Playlist 1" -i "Playlist 2"`
+
+
+**-o / --output**
+
+_Optional._ The names to create the shuffled playlists with. Multiple playlists require multiple options defined: `-o "Playlist 1 Shuffled" -o "Playlist 2 Shuffled"`
+
+
+**--overwrite**
+
+_Optional._ Defaults to false. If any of the output playlists already exists, then they this flag specifies if they will be overwritten or if the script will stop. No value needs to be specified with this option: `--overwrite`
