@@ -17,7 +17,8 @@ Developer Setup
 
 End-User Usage
 ----
-Note: I do not plan on making this end-user friendly with a GUI.
+_Note: I do not plan on making this end-user friendly with a GUI._
+
 1. Install Node.js
 	* Manual install: http://www.nodejs.org
 	* Chocolatey (for Windows): `choco install nodejs.install`
