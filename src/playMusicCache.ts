@@ -10,7 +10,7 @@ interface IPlayMusicCache {
 	playlistTracks?: pm.PlaylistItem[];
 }
 
-interface IPlaylistTrackContainer {
+export interface IPlaylistTrackContainer {
 	playlist: pm.PlaylistListItem;
 	tracks: pm.PlaylistItem[];
 }

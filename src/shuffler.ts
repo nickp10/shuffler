@@ -1,7 +1,7 @@
 /// <reference path="../typings/index.d.ts" />
 
 import * as Args from "./args";
-import PlayMusicCache from "./playMusicCache";
+import PlayMusicCache, * as pmc from "./playMusicCache";
 import * as Promise from "promise";
 
 export default class Shuffler {
@@ -11,7 +11,7 @@ export default class Shuffler {
 		this.cache.login(Args.email, Args.password).then(() => {
 			this.cache.getPlaylistsByName(Args.input).then((playlists) => {
 				this.cache.populatePlaylistTracks(playlists).then((newPlaylists) => {
-					const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists.map((playlist) => playlist.tracks)));
+					const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
 					const playlistsNeeded = Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
 					this.getOutputPlaylistNames(playlistsNeeded).then((playlistNames) => {
 						const playlistPartitions = this.partitionTracks(tracks, playlistsNeeded);
@@ -75,11 +75,11 @@ export default class Shuffler {
 	 * @param playlists An array of all the playlists to retrieve all the tracks from.
 	 * @returns An array containing all the unique/distinct tracks from all the playlists.
 	 */
-	getUniqueTracks(playlists: pm.PlaylistItem[][]): pm.PlaylistItem[] {
+	getUniqueTracks(playlists: pmc.IPlaylistTrackContainer[]): pm.PlaylistItem[] {
 		const flags = {};
 		const tracks: pm.PlaylistItem[] = [];
-		playlists.forEach((playlistTracks) => {
-			playlistTracks.forEach((track) => {
+		playlists.forEach((playlist) => {
+			playlist.tracks.forEach((track) => {
 				if (!flags[track.trackId]) {
 					flags[track.trackId] = true;
 					tracks.push(track);
