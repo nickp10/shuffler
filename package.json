@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "argv": "0.0.2",
-    "playmusic": "git+https://github.com/jamon/playmusic.git#07d7b62efba772d014b6d19093f20a1aa562db9b",
+    "playmusic": "git+https://github.com/nickp10/playmusic.git#f5c39ff5b299d00ea842a1b0c02f11686a1b9979",
     "promise": "^7.1.1"
   },
   "devDependencies": {
