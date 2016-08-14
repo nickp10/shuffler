@@ -10,8 +10,8 @@ export default class Shuffler {
 	run(): void {
 		this.cache.login(Args.email, Args.password).then(() => {
 			this.cache.getPlaylistsByName(Args.input).then((playlists) => {
-				this.cache.populatePlaylistTracks(playlists).then(() => {
-					const tracks = this.shuffleTracks(this.getUniqueTracks(playlists));
+				this.cache.populatePlaylistTracks(playlists).then((newPlaylists) => {
+					const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists.map((playlist) => playlist.tracks)));
 					const playlistsNeeded = Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
 					this.getOutputPlaylistNames(playlistsNeeded).then((playlistNames) => {
 						const playlistPartitions = this.partitionTracks(tracks, playlistsNeeded);
@@ -72,14 +72,13 @@ export default class Shuffler {
 	/**
 	 * Retrieves an array of all the unique tracks from all the playlists.
 	 * 
-	 * @param playlists An arary of all the playlists to retrieve all the tracks from.
+	 * @param playlists An array of all the playlists to retrieve all the tracks from.
 	 * @returns An array containing all the unique/distinct tracks from all the playlists.
 	 */
-	getUniqueTracks(playlists: pm.PlaylistListItem[]): pm.PlaylistItem[] {
+	getUniqueTracks(playlists: pm.PlaylistItem[][]): pm.PlaylistItem[] {
 		const flags = {};
 		const tracks: pm.PlaylistItem[] = [];
-		playlists.forEach((playlist) => {
-			const playlistTracks: pm.PlaylistItem[] = (<any>playlist).tracks;
+		playlists.forEach((playlistTracks) => {
 			playlistTracks.forEach((track) => {
 				if (!flags[track.trackId]) {
 					flags[track.trackId] = true;

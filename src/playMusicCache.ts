@@ -5,13 +5,54 @@ import * as Promise from "promise";
 import * as Utils from "./utils";
 
 interface IPlayMusicCache {
+	libraryTracks?: pm.LibraryItem[];
 	playlists?: pm.PlaylistListItem[];
 	playlistTracks?: pm.PlaylistItem[];
+}
+
+interface IPlaylistTrackContainer {
+	playlist: pm.PlaylistListItem;
+	tracks: pm.PlaylistItem[];
 }
 
 export default class PlayMusicCache {
 	cache: IPlayMusicCache = {};
 	pm: pm.PlayMusicObject = new PlayMusic();
+
+	/**
+	 * Retrieves an array of all the tracks from the library.
+	 * 
+	 * @param nextPageToken This parameter should NOT be specified. It is used internally to handle
+	 * multiple pages of library tracks.
+	 * @returns A promise that will resolve to an array of all the tracks from the library.
+	 */
+	getAllLibraryTracks(nextPageToken?: string): Promise.IThenable<pm.LibraryItem[]> {
+		return new Promise<pm.LibraryItem[]>((resolve, reject) => {
+			if (this.cache.libraryTracks) {
+				resolve(this.cache.libraryTracks);
+			} else {
+				this.pm.getLibrary({nextPageToken: nextPageToken}, (error, data) => {
+					if (error) {
+						reject("The tracks associated with the library could not be retrieved.");
+					} else {
+						const nextPageToken = data.nextPageToken;
+						const tracks = data.data.items;
+						if (nextPageToken) {
+							this.getAllLibraryTracks(nextPageToken).then((nextPageTracks) => {
+								this.cache.libraryTracks = tracks.concat(nextPageTracks);
+								resolve(this.cache.libraryTracks);
+							}, (error) => {
+								reject(error);
+							});
+						} else {
+							this.cache.libraryTracks = tracks;
+							resolve(tracks);
+						}
+					}
+				});
+			}
+		});
+	}
 
 	/**
 	 * Retrieves an array of all the tracks from all playlists.
@@ -116,17 +157,61 @@ export default class PlayMusicCache {
 	 * property to each playlists which will be an array of the tracks contained within it.
 	 * @returns A promise that will resolve when the playlists have been populated with their corresponding tracks.
 	 */
-	populatePlaylistTracks(playlists: pm.PlaylistListItem[]): Promise.IThenable<pm.PlaylistListItem[]> {
-		return new Promise<pm.PlaylistListItem[]>((resolve, reject) => {
-			this.getAllPlaylistTracks().then((tracks) => {
-				playlists.forEach((playlist) => {
-					(<any>playlist).tracks = tracks.filter((track) => playlist.id === track.playlistId);
+	populatePlaylistTracks(playlists: pm.PlaylistListItem[]): Promise.IThenable<IPlaylistTrackContainer[]> {
+		return new Promise<IPlaylistTrackContainer[]>((resolve, reject) => {
+			this.getAllLibraryTracks().then((libraryTracks) => {
+				this.getAllPlaylistTracks().then((playlistTracks) => {
+					resolve(playlists.map<IPlaylistTrackContainer>((playlist) => {
+						const tracksForPlaylist = playlistTracks.filter((playlistTrack) => playlist.id === playlistTrack.playlistId);
+						tracksForPlaylist.forEach((track) => {
+							if (!track.track) {
+								const libraryTrack = libraryTracks.filter((libraryTrack) => track.trackId === libraryTrack.id);
+								if (libraryTrack.length > 0) {
+									track.track = this.cloneLibrayItemToPlaylistItem(libraryTrack[0]);
+								}
+							}
+						});
+						return {
+							playlist: playlist,
+							tracks: tracksForPlaylist
+						};
+					}));
+				}, (error) => {
+					reject(error);
 				});
-				resolve(playlists);
 			}, (error) => {
 				reject(error);
 			});
 		});
+	}
+
+	/**
+	 * Clones the information returned from the library item and makes a compatible playlist item.
+	 * 
+	 * @param source The library item to clone into a playlist item.
+	 * @returns The playlist item that was cloned from the library item.
+	 */
+	cloneLibrayItemToPlaylistItem(source: pm.LibraryItem): pm.PlaylistTrack {
+		return {
+			album: source.album,
+			albumArtist: source.albumArtist,
+			albumArtRef: source.albumArtRef,
+			artist: source.artist,
+			artistArtRef: source.artistArtRef,
+			artistId: source.artistId,
+			composer: source.composer,
+			discNumber: source.discNumber,
+			durationMillis: source.durationMillis,
+			estimatedSize: source.estimatedSize,
+			genre: source.genre,
+			kind: source.kind,
+			nid: source.nid,
+			playCount: source.playCount,
+			storeId: source.storeId,
+			title: source.title,
+			trackNumber: source.trackNumber,
+			year: source.year
+		};
 	}
 
 	/**
@@ -141,8 +226,8 @@ export default class PlayMusicCache {
 	getOrCreatePlaylist(playlistName: string, deleteTimeoutMillis: number = 30000): Promise.IThenable<pm.PlaylistListItem> {
 		return new Promise<pm.PlaylistListItem>((resolve, reject) => {
 			this.getPlaylistsByName([playlistName]).then((playlists) => {
-				this.populatePlaylistTracks(playlists).then(() => {
-					const tracksToRemove = Utils.flattenArray<pm.PlaylistItem>(playlists.map(playlist => <pm.PlaylistItem[]>(<any>playlist).tracks));
+				this.populatePlaylistTracks(playlists).then((newPlaylists) => {
+					const tracksToRemove = Utils.flattenArray<pm.PlaylistItem>(newPlaylists.map(playlist => playlist.tracks));
 					const ids = tracksToRemove.map(track => track.id);
 					if (ids.length === 0) {
 						resolve(playlists[0]);
