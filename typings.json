@@ -3,7 +3,7 @@
   "dependencies": {},
   "globalDependencies": {
     "argv": "registry:dt/argv#0.0.0+20160523040018",
-    "node": "registry:env/node#6.0.0+20160723033700",
+    "node": "registry:env/node#6.0.0+20161019193037",
     "playmusic": "github:nickp10/playmusic-typings/playmusic.d.ts",
     "promise": "registry:dt/promise#7.1.1+20160602154553"
   }

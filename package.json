@@ -16,8 +16,7 @@
   "scripts": {
     "compile": "gulp compile",
     "gulp": "gulp",
-    "setup": "npm install && typings install && gulp compile",
-    "setup-dev": "npm install && typings install",
+    "prepublish": "typings install",
     "typings": "typings"
   },
   "dependencies": {
@@ -27,8 +26,8 @@
   },
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-typescript": "^2.13.6",
-    "typescript": "^1.8.10",
-    "typings": "^1.3.2"
+    "gulp-typescript": "^3.1.2",
+    "typescript": "^2.0.6",
+    "typings": "^1.5.0"
   }
 }

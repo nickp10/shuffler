@@ -10,10 +10,8 @@ Google Play Music already allows playlists to be shuffled when being played. I, 
 
 Developer Setup
 ----
-1. Install Node.js
-	* Manual install: http://www.nodejs.org
-	* Chocolatey (for Windows): `choco install nodejs.install`
-1. Run the developer setup script: `npm run setup-dev`
+1. Use `git clone` to clone the GitHub repository
+1. In the root directory of the module, run: `npm install`
 
 End-User Usage
 ----
@@ -22,7 +20,8 @@ _Note: I do not plan on making this end-user friendly with a GUI._
 1. Install Node.js
 	* Manual install: http://www.nodejs.org
 	* Chocolatey (for Windows): `choco install nodejs.install`
-1. Run the setup script: `npm run setup`
+1. In the root directory of the module, run: `npm install`
+1. Compile the script by running: `npm run compile`
 1. Run the script `node build/index.js -e <EMAIL> -p <PASSWORD> -i <PLAYLIST>`
 
 Script Options
