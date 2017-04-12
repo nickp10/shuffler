@@ -2,7 +2,6 @@
 
 import * as Args from "./args";
 import PlayMusicCache, * as pmc from "./playMusicCache";
-import * as Promise from "promise";
 
 export default class Shuffler {
 	cache = new PlayMusicCache();
@@ -20,7 +19,7 @@ export default class Shuffler {
 							const playlistPartition = playlistPartitions[partitionIndex++];
 							return this.shufflePlaylist(playlistName, playlistPartition);
 						});
-						Promise.all(allPromises).done(() => {
+						Promise.all(allPromises).then(() => {
 							console.log("Playlists have been shuffled.");
 							process.exit();
 						}, (error) => {
@@ -45,7 +44,7 @@ export default class Shuffler {
 		});
 	}
 
-	getOutputPlaylistNames(playlistsNeeded: number): Promise.IThenable<string[]> {
+	getOutputPlaylistNames(playlistsNeeded: number): Promise<string[]> {
 		return new Promise<string[]>((resolve, reject) => {
 			this.cache.getAllPlaylists().then((allPlaylists) => {
 				const needsIdentifier = playlistsNeeded > Args.output.length;
@@ -117,8 +116,8 @@ export default class Shuffler {
 		return partitions;
 	}
 
-	shufflePlaylist(playlistName: string, playlistPartition: pm.PlaylistItem[]): Promise.IThenable<void> {
-		return new Promise<void>((resolve, reject) => {
+	shufflePlaylist(playlistName: string, playlistPartition: pm.PlaylistItem[]): Promise<any> {
+		return new Promise<any>((resolve, reject) => {
 			this.cache.getOrCreatePlaylist(playlistName).then((playlist) => {
 				this.cache.addTracksToPlaylist(playlist, playlistPartition).then(() => {
 					resolve(undefined);

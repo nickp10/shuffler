@@ -1,7 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
 
 import * as PlayMusic from "playmusic";
-import * as Promise from "promise";
 import * as Utils from "./utils";
 
 interface IPlayMusicCache {
@@ -26,7 +25,7 @@ export default class PlayMusicCache {
 	 * multiple pages of library tracks.
 	 * @returns A promise that will resolve to an array of all the tracks from the library.
 	 */
-	getAllLibraryTracks(nextPageToken?: string): Promise.IThenable<pm.LibraryItem[]> {
+	getAllLibraryTracks(nextPageToken?: string): Promise<pm.LibraryItem[]> {
 		return new Promise<pm.LibraryItem[]>((resolve, reject) => {
 			if (this.cache.libraryTracks) {
 				resolve(this.cache.libraryTracks);
@@ -61,7 +60,7 @@ export default class PlayMusicCache {
 	 * multiple pages of playlist tracks.
 	 * @returns A promise that will resolve to an array of all the tracks from all playlists.
 	 */
-	getAllPlaylistTracks(nextPageToken?: string): Promise.IThenable<pm.PlaylistItem[]> {
+	getAllPlaylistTracks(nextPageToken?: string): Promise<pm.PlaylistItem[]> {
 		return new Promise<pm.PlaylistItem[]>((resolve, reject) => {
 			if (this.cache.playlistTracks) {
 				resolve(this.cache.playlistTracks);
@@ -94,7 +93,7 @@ export default class PlayMusicCache {
 	 * 
 	 * @returns A promise that will resolve to an array of all the playlists.
 	 */
-	getAllPlaylists(): Promise.IThenable<pm.PlaylistListItem[]> {
+	getAllPlaylists(): Promise<pm.PlaylistListItem[]> {
 		return new Promise<pm.PlaylistListItem[]>((resolve, reject) => {
 			if (this.cache.playlists) {
 				resolve(this.cache.playlists);
@@ -117,7 +116,7 @@ export default class PlayMusicCache {
 	 * @param playlistNames The names of the playlists to retrieve.
 	 * @returns A promise that will resolve to an array of the matching playlists by name.
 	 */
-	getPlaylistsByName(playlistNames: string[]): Promise.IThenable<pm.PlaylistListItem[]> {
+	getPlaylistsByName(playlistNames: string[]): Promise<pm.PlaylistListItem[]> {
 		return new Promise<pm.PlaylistListItem[]>((resolve, reject) => {
 			this.getAllPlaylists().then((allPlaylists) => {
 				const playlists: pm.PlaylistListItem[] = [];
@@ -157,7 +156,7 @@ export default class PlayMusicCache {
 	 * property to each playlists which will be an array of the tracks contained within it.
 	 * @returns A promise that will resolve when the playlists have been populated with their corresponding tracks.
 	 */
-	populatePlaylistTracks(playlists: pm.PlaylistListItem[]): Promise.IThenable<IPlaylistTrackContainer[]> {
+	populatePlaylistTracks(playlists: pm.PlaylistListItem[]): Promise<IPlaylistTrackContainer[]> {
 		return new Promise<IPlaylistTrackContainer[]>((resolve, reject) => {
 			this.getAllLibraryTracks().then((libraryTracks) => {
 				this.getAllPlaylistTracks().then((playlistTracks) => {
@@ -223,7 +222,7 @@ export default class PlayMusicCache {
 	 * before continuing on. This should allow Google enough time to propagate the track removals.
 	 * @returns A promise that will resolve to the empty playlist.
 	 */
-	getOrCreatePlaylist(playlistName: string, deleteTimeoutMillis: number = 30000): Promise.IThenable<pm.PlaylistListItem> {
+	getOrCreatePlaylist(playlistName: string, deleteTimeoutMillis: number = 30000): Promise<pm.PlaylistListItem> {
 		return new Promise<pm.PlaylistListItem>((resolve, reject) => {
 			this.getPlaylistsByName([playlistName]).then((playlists) => {
 				this.populatePlaylistTracks(playlists).then((newPlaylists) => {
@@ -269,7 +268,7 @@ export default class PlayMusicCache {
 	 * @param tracks The array of tracks to add to the playlist.
 	 * @returns A promise that will resolve when the tracks have been added to the playlist.
 	 */
-	addTracksToPlaylist(playlist: pm.PlaylistListItem, tracks: pm.PlaylistItem[]): Promise.IThenable<pm.MutateResponses> {
+	addTracksToPlaylist(playlist: pm.PlaylistListItem, tracks: pm.PlaylistItem[]): Promise<pm.MutateResponses> {
 		return new Promise<pm.MutateResponses>((resolve, reject) => {
 			const trackIds = tracks.map((track) => track.trackId);
 			this.pm.addTrackToPlayList(trackIds, playlist.id, (error, data) => {
@@ -290,11 +289,31 @@ export default class PlayMusicCache {
 	 * @param password The password of the user to login with.
 	 * @returns A promise that will resolve when the user has logged in.
 	 */
-	login(email: string, password: string): Promise.IThenable<void> {
+	login(email: string, password: string): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
 			this.pm.init({ email: email, password: password }, (error) => {
 				if (error) {
 					reject("Authentication failed. Please check the email and password supplied.");
+				} else {
+					resolve(undefined);
+				}
+			});
+		});
+	}
+
+	/**
+	 * Logs into the play music API with the specified android ID and token. The playlists and associated tracks will
+	 * be correlated with the user that has logged in via this function call.
+	 * 
+	 * @param androidId The Android device ID to login with.
+	 * @param token A pre-authorized token for the device ID to login with.
+	 * @returns A promise that will resolve when the user has logged in.
+	 */
+	loginWithToken(androidId: string, token: string): Promise<void> {
+		return new Promise<void>((resolve, reject) => {
+			this.pm.init({ androidId: androidId, masterToken: token }, (error) => {
+				if (error) {
+					reject("Authentication failed. Please check the android ID and master token supplied.");
 				} else {
 					resolve(undefined);
 				}
