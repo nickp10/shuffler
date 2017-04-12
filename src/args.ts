@@ -5,23 +5,23 @@ import * as Utils from "./utils";
 
 class Args {
 	maxTracksPerPlaylist: number;
-	email: string;
-	password: string;
+	androidId: string;
+	token: string;
 	overwrite: boolean;
 	input: string[];
 	output: string[];
 
 	constructor() {
 		const args = argv
-			.option({ name: "email", short: "e", type: "string" })
-			.option({ name: "password", short: "p", type: "string" })
+			.option({ name: "androidId", short: "a", type: "string" })
+			.option({ name: "token", short: "t", type: "string" })
 			.option({ name: "input", short: "i", type: "list,string" })
 			.option({ name: "output", short: "o", type: "list,string" })
-            .option({ name: "overwrite", type: "boolean" })
+			.option({ name: "overwrite", type: "boolean" })
 			.option({ name: "maxTracksPerPlaylist", type: "number" })
 			.run();
-		this.email = args.options["email"];
-		this.password = args.options["password"];
+		this.androidId = args.options["androidId"];
+		this.token = args.options["token"];
 		this.input = args.options["input"];
 		this.output = args.options["output"];
 		this.overwrite = args.options["overwrite"] === true;
@@ -30,12 +30,12 @@ class Args {
 	}
 
 	validate(): void {
-		if (!this.email) {
-			console.error("The -e or --email argument must be supplied.");
+		if (!this.androidId) {
+			console.error("The -a or --androidId argument must be supplied.");
 			process.exit();
 		}
-		if (!this.password) {
-			console.error("The -p or --password argument must be supplied.");
+		if (!this.token) {
+			console.error("The -t or --token argument must be supplied.");
 			process.exit();
 		}
 		if (!this.input) {

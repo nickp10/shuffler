@@ -7,7 +7,7 @@ export default class Shuffler {
 	cache = new PlayMusicCache();
 
 	run(): void {
-		this.cache.login(Args.email, Args.password).then(() => {
+		this.cache.loginWithToken(Args.androidId, Args.token).then(() => {
 			this.cache.getPlaylistsByName(Args.input).then((playlists) => {
 				this.cache.populatePlaylistTracks(playlists).then((newPlaylists) => {
 					const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
