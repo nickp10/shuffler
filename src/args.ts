@@ -8,6 +8,7 @@ class Args {
 	androidId: string;
 	token: string;
 	overwrite: boolean;
+	singlePlaylist: boolean;
 	input: string[];
 	output: string[];
 
@@ -18,14 +19,16 @@ class Args {
 			.option({ name: "input", short: "i", type: "list,string" })
 			.option({ name: "output", short: "o", type: "list,string" })
 			.option({ name: "overwrite", type: "boolean" })
-			.option({ name: "maxTracksPerPlaylist", type: "number" })
+			.option({ name: "maxTracksPerPlaylist", short: "m", type: "number" })
+			.option({ name: "singlePlaylist", type: "boolean" })
 			.run();
 		this.androidId = args.options["androidId"];
 		this.token = args.options["token"];
 		this.input = args.options["input"];
 		this.output = args.options["output"];
 		this.overwrite = args.options["overwrite"] === true;
-		this.maxTracksPerPlaylist = args.options["maxTracksPerPlaylist"];
+		this.maxTracksPerPlaylist = parseInt(args.options["maxTracksPerPlaylist"]) || 0;
+		this.singlePlaylist = args.options["singlePlaylist"] === true;
 		this.validate();
 	}
 

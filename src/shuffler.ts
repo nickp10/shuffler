@@ -11,7 +11,13 @@ export default class Shuffler {
 			this.cache.getPlaylistsByName(Args.input).then((playlists) => {
 				this.cache.populatePlaylistTracks(playlists).then((newPlaylists) => {
 					const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
-					const playlistsNeeded = Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
+					if (Args.singlePlaylist) {
+						var playlists = 1;
+					}
+					else {
+						var playlists = Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
+					}
+					const playlistsNeeded = playlists
 					this.getOutputPlaylistNames(playlistsNeeded).then((playlistNames) => {
 						const playlistPartitions = this.partitionTracks(tracks, playlistsNeeded);
 						let partitionIndex = 0;
