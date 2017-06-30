@@ -30,7 +30,7 @@ class Utils {
 	 * @param arr The array to flatten.
 	 * @returns The one-dimensional array containing all the items.
 	 */
-	flattenArray<T>(arr: T|T[]): T[] {
+	flattenArray<T>(arr: T|T[]|T[][]): T[] {
 		const flat: T[] = [];
 		if (Array.isArray(arr)) {
 			for (let i = 0; i < arr.length; i++) {

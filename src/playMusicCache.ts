@@ -1,5 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
-
 import * as PlayMusic from "playmusic";
 import * as Utils from "./utils";
 

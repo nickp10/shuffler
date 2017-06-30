@@ -1,5 +1,3 @@
-/// <reference path="../typings/index.d.ts" />
-
 import * as argv from "argv";
 import * as Utils from "./utils";
 
