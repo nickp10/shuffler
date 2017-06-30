@@ -22,13 +22,13 @@ _Note: I do not plan on making this end-user friendly with a GUI._
 	* Chocolatey (for Windows): `choco install nodejs.install`
 1. In the root directory of the module, run: `npm install`
 1. Compile the script by running: `npm run compile`
-1. Run the script `node build/index.js -e <EMAIL> -p <PASSWORD> -i <PLAYLIST>`
+1. Run the script `node build/index.js -a <ANDROID-ID> -t <TOKEN> -i <PLAYLIST>`
 
 Script Options
 ----
-**-a / --androidID**
+**-a / --androidId**
 
-_Required._ Specifies the android id to login with. 
+_Required._ Specifies the android ID to login with. 
 
 
 **-t / --token**
@@ -50,9 +50,13 @@ _Optional._ The names to create the shuffled playlists with. Multiple playlists 
 
 _Optional._ Defaults to false. If any of the output playlists already exists, then they this flag specifies if they will be overwritten or if the script will stop. No value needs to be specified with this option: `--overwrite`
 
+**-m / --maxTracksPerPlaylist**
+
+_Optional._ Defaults to 1000. The maximum number of tracks to put into each generated playlist.
+
 **--singlePlaylist**
 
-_Optional._ Defaults to false. This flag specifies that only one playlist will be created`--singlePlaylist`
+_Optional._ Defaults to false. This flag specifies that only one playlist will be created. No value needs to be specified with this option: `--singlePlaylist`
 
 Attribution
 ----
