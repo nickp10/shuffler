@@ -1,8 +1,12 @@
 {
   "name": "shuffler",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Shuffles multiple Google Play Music playlists together",
+  "bin": "build/index.js",
   "main": "build/index.js",
+  "files": [
+    "build/"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nickp10/shuffler.git"
@@ -14,8 +18,12 @@
   },
   "homepage": "https://github.com/nickp10/shuffler#readme",
   "scripts": {
+    "build": "gulp build",
+    "build-debug": "gulp build -e debug",
     "compile": "gulp compile",
-    "gulp": "gulp"
+    "compile-debug": "gulp compile -e debug",
+    "prepare": "npm run build",
+    "start": "node build/index.js"
   },
   "dependencies": {
     "argv": "0.0.2",
@@ -23,9 +31,10 @@
   },
   "devDependencies": {
     "@types/argv": "0.0.4",
-    "@types/node": "^8.0.6",
+    "@types/node": "^9.4.6",
     "gulp": "^3.9.1",
-    "gulp-typescript": "^3.1.7",
-    "typescript": "^2.4.1"
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-typescript": "^4.0.1",
+    "typescript": "^2.7.2"
   }
 }

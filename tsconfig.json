@@ -1,7 +1,8 @@
 {
      "compilerOptions": {
-          "removeComments": true,
           "module": "commonjs",
+          "newLine": "LF",
+          "removeComments": true,
           "target": "es6"
      }
 }
