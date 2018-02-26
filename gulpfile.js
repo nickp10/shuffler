@@ -16,9 +16,11 @@ gulp.task("compile", () => {
         return src.pipe(sourcemaps.init())
             .pipe(tsconfig())
             .pipe(sourcemaps.mapSources((sourcePath, file) => {
-                const from = path.resolve(path.join(__dirname, destDirname));
                 const to = path.dirname(file.path);
-                return path.join(path.relative(from, to), sourcePath);
+                const buildToRoot = path.relative(to, __dirname);
+                const rootToSource = path.relative(__dirname, to);
+                const fileName = path.basename(sourcePath);
+                return path.join(buildToRoot, rootToSource, fileName);
             }))
             .pipe(sourcemaps.write(""))
             .pipe(gulp.dest(dest));
