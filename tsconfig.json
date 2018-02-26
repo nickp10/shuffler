@@ -1,7 +1,7 @@
 {
-	"compilerOptions": {
-		"removeComments": true,
-		"module": "commonjs",
-		"target": "es6"
-	}
+     "compilerOptions": {
+          "removeComments": true,
+          "module": "commonjs",
+          "target": "es6"
+     }
 }
