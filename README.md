@@ -18,8 +18,8 @@ End-User Usage
 _Note: I do not plan on making this end-user friendly with a GUI._
 
 1. Install Node.js
-     * Manual install: http://www.nodejs.org
-     * Chocolatey (for Windows): `choco install nodejs.install`
+    * Manual install: http://www.nodejs.org
+    * Chocolatey (for Windows): `choco install nodejs.install`
 1. In the root directory of the module, run: `npm install`
 1. Run the script `node build/index.js -a <ANDROID-ID> -t <TOKEN> -i <PLAYLIST>`
 

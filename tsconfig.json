@@ -1,8 +1,8 @@
 {
-     "compilerOptions": {
-          "module": "commonjs",
-          "newLine": "LF",
-          "removeComments": true,
-          "target": "es6"
-     }
+    "compilerOptions": {
+        "module": "commonjs",
+        "newLine": "LF",
+        "removeComments": true,
+        "target": "es6"
+    }
 }
