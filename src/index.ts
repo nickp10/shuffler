@@ -1,5 +1,9 @@
 #! /usr/bin/env node
 
+import "babel-polyfill";
 import Shuffler from "./shuffler";
 
-new Shuffler().run();
+(async () => {
+    await new Shuffler().run();
+    process.exit();
+})();

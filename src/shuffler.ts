@@ -1,69 +1,46 @@
 import * as Args from "./args";
+import * as pm from "playmusic";
 import PlayMusicCache, * as pmc from "./playMusicCache";
 
 export default class Shuffler {
     cache = new PlayMusicCache();
 
-    run(): void {
-        this.cache.loginWithToken(Args.androidId, Args.token).then(() => {
-            this.cache.getPlaylistsByName(Args.input).then((playlists) => {
-                this.cache.populatePlaylistTracks(playlists).then((newPlaylists) => {
-                    const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
-                    const playlistsNeeded = Args.singlePlaylist ? 1 : Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
-                    this.getOutputPlaylistNames(playlistsNeeded).then((playlistNames) => {
-                        const playlistPartitions = this.partitionTracks(tracks, playlistsNeeded);
-                        let partitionIndex = 0;
-                        const allPromises = playlistNames.map((playlistName) => {
-                            const playlistPartition = playlistPartitions[partitionIndex++];
-                            return this.shufflePlaylist(playlistName, playlistPartition);
-                        });
-                        Promise.all(allPromises).then(() => {
-                            console.log("Playlists have been shuffled.");
-                            process.exit();
-                        }, (error) => {
-                            console.error(error);
-                            process.exit();
-                        });
-                    }, (error) => {
-                        console.error(error);
-                        process.exit();
-                    });
-                }, (error) => {
-                    console.error(error);
-                    process.exit();
-                });
-            }, (error) => {
-                console.error(error);
-                process.exit();
-            });
-        }, (error) => {
+    async run(): Promise<void> {
+        try {
+            await this.cache.loginWithToken(Args.androidId, Args.token);
+            const playlists = await this.cache.getPlaylistsByName(Args.input);
+            const newPlaylists = await this.cache.populatePlaylistTracks(playlists);
+            const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
+            const playlistsNeeded = Args.singlePlaylist ? 1 : Math.ceil(tracks.length / Args.maxTracksPerPlaylist);
+            const playlistNames = await this.getOutputPlaylistNames(playlistsNeeded);
+            const playlistPartitions = this.partitionTracks(tracks, playlistsNeeded);
+            for (let i = 0; i < playlistNames.length; i++) {
+                const playlistName = playlistNames[i];
+                const playlistPartition = playlistPartitions[i];
+                await this.shufflePlaylist(playlistName, playlistPartition);
+            }
+            console.log("Playlists have been shuffled.");
+        } catch(error) {
             console.error(error);
-            process.exit();
-        });
+        }
     }
 
-    getOutputPlaylistNames(playlistsNeeded: number): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            this.cache.getAllPlaylists().then((allPlaylists) => {
-                const needsIdentifier = playlistsNeeded > Args.output.length;
-                const playlistNames: string[] = [];
-                for (let i = 0; i < playlistsNeeded; i++) {
-                    const outputName = Args.output[i % Args.output.length];
-                    const identifier = Math.ceil((i + 1) / Args.output.length);
-                    const playlistName = needsIdentifier ? `${outputName} (${identifier})` : outputName;
-                    if (!Args.overwrite) {
-                        if (allPlaylists.filter((p) => p.name === playlistName).length > 0) {
-                            reject("A playlist with the name of '" + playlistName + "' already exists. Specify the --overwrite argument to overwrite the playlist.");
-                            return;
-                        }
-                    }
-                    playlistNames.push(playlistName);
+    async getOutputPlaylistNames(playlistsNeeded: number): Promise<string[]> {
+        const allPlaylists = await this.cache.getAllPlaylists();
+        const needsIdentifier = playlistsNeeded > Args.output.length;
+        const playlistNames: string[] = [];
+        for (let i = 0; i < playlistsNeeded; i++) {
+            const outputName = Args.output[i % Args.output.length];
+            const identifier = Math.ceil((i + 1) / Args.output.length);
+            const playlistName = needsIdentifier ? `${outputName} (${identifier})` : outputName;
+            if (!Args.overwrite) {
+                if (allPlaylists.filter((p) => p.name === playlistName).length > 0) {
+                    throw new Error("A playlist with the name of '" + playlistName + "' already exists. Specify the --overwrite argument to overwrite the playlist.");
                 }
-                resolve(playlistNames);
-            }, (error) => {
-                reject(error);
-            });
-        });
+            }
+            playlistNames.push(playlistName);
+        }
+        return playlistNames;
     }
 
     /**
@@ -114,17 +91,8 @@ export default class Shuffler {
         return partitions;
     }
 
-    shufflePlaylist(playlistName: string, playlistPartition: pm.PlaylistItem[]): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            this.cache.getOrCreatePlaylist(playlistName).then((playlist) => {
-                this.cache.addTracksToPlaylist(playlist, playlistPartition).then(() => {
-                    resolve(undefined);
-                }, (error) => {
-                    reject(error);
-                });
-            }, (error) => {
-                reject(error);
-            });
-        });
+    async shufflePlaylist(playlistName: string, playlistPartition: pm.PlaylistItem[]): Promise<void> {
+        const playlist = await this.cache.getOrCreatePlaylist(playlistName);
+        await this.cache.addTracksToPlaylist(playlist, playlistPartition);
     }
 }
