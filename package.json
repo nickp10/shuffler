@@ -25,21 +25,21 @@
   },
   "dependencies": {
     "argv": "0.0.2",
-    "core-js": "^3.2.1",
+    "core-js": "^3.6.4",
     "playmusic": "github:nickp10/playmusic",
     "regenerator-runtime": "^0.13.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.6.0",
-    "@babel/preset-env": "^7.6.0",
+    "@babel/core": "^7.8.3",
+    "@babel/preset-env": "^7.8.3",
     "@types/argv": "0.0.4",
-    "@types/node": "^12.7.4",
+    "@types/node": "^13.1.8",
     "@types/playmusic": "^2.3.0",
     "babel-loader": "^8.0.6",
-    "ts-loader": "^6.0.4",
-    "typescript": "^3.6.2",
-    "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.8",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.5",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
     "webpack-merge": "^4.2.2"
   }
 }
