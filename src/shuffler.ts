@@ -1,13 +1,16 @@
 import * as Args from "./args";
-import * as pm from "playmusic";
+import { IPlaylistDetail, ITrackDetail } from "youtube-music-ts-api";
 import PlayMusicCache, * as pmc from "./playMusicCache";
 
 export default class Shuffler {
-    cache = new PlayMusicCache();
+    cache: PlayMusicCache;
+
+    constructor() {
+        this.cache = new PlayMusicCache(Args.cookie);
+    }
 
     async run(): Promise<void> {
         try {
-            await this.cache.loginWithToken(Args.androidId, Args.token);
             const playlists = await this.cache.getPlaylistsByName(Args.input);
             const newPlaylists = await this.cache.populatePlaylistTracks(playlists);
             const tracks = this.shuffleTracks(this.getUniqueTracks(newPlaylists));
@@ -49,13 +52,13 @@ export default class Shuffler {
      * @param playlists An array of all the playlists to retrieve all the tracks from.
      * @returns An array containing all the unique/distinct tracks from all the playlists.
      */
-    getUniqueTracks(playlists: pmc.IPlaylistTrackContainer[]): pm.PlaylistItem[] {
+    getUniqueTracks(playlists: IPlaylistDetail[]): ITrackDetail[] {
         const flags = {};
-        const tracks: pm.PlaylistItem[] = [];
+        const tracks: ITrackDetail[] = [];
         playlists.forEach((playlist) => {
             playlist.tracks.forEach((track) => {
-                if (!flags[track.trackId]) {
-                    flags[track.trackId] = true;
+                if (!flags[track.id]) {
+                    flags[track.id] = true;
                     tracks.push(track);
                 }
             });
@@ -70,7 +73,7 @@ export default class Shuffler {
      * @param tracks The array of tracks to shuffle.
      * @returns The shuffled array of tracks. Note: this will be the same instance as the array that is passed in.
      */
-    shuffleTracks(tracks: pm.PlaylistItem[]): pm.PlaylistItem[] {
+    shuffleTracks(tracks: ITrackDetail[]): ITrackDetail[] {
         let currentIndex = tracks.length;
         while (currentIndex !== 0) {
             const randomIndex = Math.floor(Math.random() * currentIndex);
@@ -82,8 +85,8 @@ export default class Shuffler {
         return tracks;
     }
 
-    partitionTracks(tracks: pm.PlaylistItem[], playlistsNeeded: number): pm.PlaylistItem[][] {
-        const partitions: pm.PlaylistItem[][] = [];
+    partitionTracks(tracks: ITrackDetail[], playlistsNeeded: number): ITrackDetail[][] {
+        const partitions: ITrackDetail[][] = [];
         for (let i = 0; i < playlistsNeeded; i++) {
             const startIndex = i * Args.maxTracksPerPlaylist;
             partitions[i] = tracks.slice(startIndex, startIndex + Args.maxTracksPerPlaylist);
@@ -91,8 +94,8 @@ export default class Shuffler {
         return partitions;
     }
 
-    async shufflePlaylist(playlistName: string, playlistPartition: pm.PlaylistItem[]): Promise<void> {
+    async shufflePlaylist(playlistName: string, playlistPartition: ITrackDetail[]): Promise<void> {
         const playlist = await this.cache.getOrCreatePlaylist(playlistName);
-        await this.cache.addTracksToPlaylist(playlist, playlistPartition);
+        await this.cache.addTracksToPlaylist(playlist.id, playlistPartition);
     }
 }

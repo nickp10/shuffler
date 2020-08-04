@@ -1,89 +1,14 @@
-import PlayMusic, * as pm from "playmusic";
-import * as Utils from "./utils";
-
-interface IPlayMusicCache {
-    libraryTracks?: pm.LibraryItem[];
-    playlists?: pm.PlaylistListItem[];
-    playlistTracks?: pm.PlaylistItem[];
-}
-
-export interface IPlaylistTrackContainer {
-    playlist: pm.PlaylistListItem;
-    tracks: pm.PlaylistItem[];
-}
+import YouTubeMusic from "youtube-music-ts-api";
+import { IYouTubeMusicAuthenticated } from "youtube-music-ts-api/interfaces-primary";
+import { IPlaylistDetail, IPlaylistSummary, ITrackDetail } from "youtube-music-ts-api/interfaces-supplementary";
 
 export default class PlayMusicCache {
-    cache: IPlayMusicCache = {};
-    pm: PlayMusic = new PlayMusic();
+    cachedPlaylists: IPlaylistSummary[];
+    cookiesStr: string;
+    ytma: IYouTubeMusicAuthenticated;
 
-    /**
-     * Retrieves an array of all the tracks from the library.
-     * 
-     * @param nextPageToken This parameter should NOT be specified. It is used internally to handle
-     * multiple pages of library tracks.
-     * @returns A promise that will resolve to an array of all the tracks from the library.
-     */
-    async getAllLibraryTracks(nextPageToken?: string): Promise<pm.LibraryItem[]> {
-        return new Promise<pm.LibraryItem[]>((resolve, reject) => {
-            if (this.cache.libraryTracks) {
-                resolve(this.cache.libraryTracks);
-            } else {
-                this.pm.getLibrary({nextPageToken: nextPageToken}, (error, data) => {
-                    if (error) {
-                        reject("The tracks associated with the library could not be retrieved.");
-                    } else {
-                        const nextPageToken = data.nextPageToken;
-                        const tracks = data.data.items;
-                        if (nextPageToken) {
-                            this.getAllLibraryTracks(nextPageToken).then((nextPageTracks) => {
-                                this.cache.libraryTracks = tracks.concat(nextPageTracks);
-                                resolve(this.cache.libraryTracks);
-                            }, (error) => {
-                                reject(error);
-                            });
-                        } else {
-                            this.cache.libraryTracks = tracks;
-                            resolve(tracks);
-                        }
-                    }
-                });
-            }
-        });
-    }
-
-    /**
-     * Retrieves an array of all the tracks from all playlists.
-     * 
-     * @param nextPageToken This parameter should NOT be specified. It is used internally to handle
-     * multiple pages of playlist tracks.
-     * @returns A promise that will resolve to an array of all the tracks from all playlists.
-     */
-    async getAllPlaylistTracks(nextPageToken?: string): Promise<pm.PlaylistItem[]> {
-        return new Promise<pm.PlaylistItem[]>((resolve, reject) => {
-            if (this.cache.playlistTracks) {
-                resolve(this.cache.playlistTracks);
-            } else {
-                this.pm.getPlayListEntries({nextPageToken: nextPageToken}, (error, data) => {
-                    if (error) {
-                        reject("The tracks associated with each playlist could not be retrieved.");
-                    } else {
-                        const nextPageToken = data.nextPageToken;
-                        const tracks = data.data.items;
-                        if (nextPageToken) {
-                            this.getAllPlaylistTracks(nextPageToken).then((nextPageTracks) => {
-                                this.cache.playlistTracks = tracks.concat(nextPageTracks);
-                                resolve(this.cache.playlistTracks);
-                            }, (error) => {
-                                reject(error);
-                            });
-                        } else {
-                            this.cache.playlistTracks = tracks;
-                            resolve(tracks);
-                        }
-                    }
-                });
-            }
-        });
+    constructor(cookiesStr: string) {
+        this.cookiesStr = cookiesStr;
     }
 
     /**
@@ -91,21 +16,13 @@ export default class PlayMusicCache {
      * 
      * @returns A promise that will resolve to an array of all the playlists.
      */
-    async getAllPlaylists(): Promise<pm.PlaylistListItem[]> {
-        return new Promise<pm.PlaylistListItem[]>((resolve, reject) => {
-            if (this.cache.playlists) {
-                resolve(this.cache.playlists);
-            } else {
-                this.pm.getPlayLists((error, data) => {
-                    if (error) {
-                        reject("The playlists for the account could not be retrieved.");
-                    } else {
-                        this.cache.playlists = data.data.items;
-                        resolve(this.cache.playlists);
-                    }
-                });
-            }
-        });
+    async getAllPlaylists(): Promise<IPlaylistSummary[]> {
+        if (this.cachedPlaylists) {
+            return this.cachedPlaylists;
+        }
+        const ytma = await this.login();
+        this.cachedPlaylists = await ytma.getLibraryPlaylists();
+        return this.cachedPlaylists;
     }
 
     /**
@@ -114,37 +31,32 @@ export default class PlayMusicCache {
      * @param playlistNames The names of the playlists to retrieve.
      * @returns A promise that will resolve to an array of the matching playlists by name.
      */
-    async getPlaylistsByName(playlistNames: string[]): Promise<pm.PlaylistListItem[]> {
-        return new Promise<pm.PlaylistListItem[]>((resolve, reject) => {
-            this.getAllPlaylists().then((allPlaylists) => {
-                const playlists: pm.PlaylistListItem[] = [];
-                let errorPlaylistName: string;
-                for (let i = 0; i < playlistNames.length; i++) {
-                    const playlistName = playlistNames[i];
-                    let foundPlaylist: pm.PlaylistListItem;
-                    for (let j = 0; j < allPlaylists.length; j++) {
-                        const playlistItem = allPlaylists[j];
-                        if (playlistItem.name === playlistName) {
-                            foundPlaylist = playlistItem;
-                            break;
-                        }
-                    }
-                    if (foundPlaylist) {
-                        playlists.push(foundPlaylist);
-                    } else {
-                        errorPlaylistName = playlistName;
-                        break;
-                    }
+    async getPlaylistsByName(playlistNames: string[]): Promise<IPlaylistSummary[]> {
+        const allPlaylists = await this.getAllPlaylists();
+        const playlists: IPlaylistSummary[] = [];
+        let errorPlaylistName: string;
+        for (let i = 0; i < playlistNames.length; i++) {
+            const playlistName = playlistNames[i];
+            let foundPlaylist: IPlaylistSummary;
+            for (let j = 0; j < allPlaylists.length; j++) {
+                const playlistItem = allPlaylists[j];
+                if (playlistItem.name === playlistName) {
+                    foundPlaylist = playlistItem;
+                    break;
                 }
-                if (errorPlaylistName) {
-                    reject("Could not find the specified playlist: " + errorPlaylistName);
-                } else {
-                    resolve(playlists);
-                }
-            }, (error) => {
-                reject(error);
-            });
-        });
+            }
+            if (foundPlaylist) {
+                playlists.push(foundPlaylist);
+            } else {
+                errorPlaylistName = playlistName;
+                break;
+            }
+        }
+        if (errorPlaylistName) {
+            throw new Error("Could not find the specified playlist: " + errorPlaylistName);
+        } else {
+            return playlists;
+        }
     }
 
     /**
@@ -154,65 +66,19 @@ export default class PlayMusicCache {
      * property to each playlists which will be an array of the tracks contained within it.
      * @returns A promise that will resolve when the playlists have been populated with their corresponding tracks.
      */
-    async populatePlaylistTracks(playlists: pm.PlaylistListItem[]): Promise<IPlaylistTrackContainer[]> {
-        return new Promise<IPlaylistTrackContainer[]>((resolve, reject) => {
-            this.getAllLibraryTracks().then((libraryTracks) => {
-                this.getAllPlaylistTracks().then((playlistTracks) => {
-                    resolve(playlists.map<IPlaylistTrackContainer>((playlist) => {
-                        const tracksForPlaylist = playlistTracks.filter((playlistTrack) => playlist.id === playlistTrack.playlistId);
-                        tracksForPlaylist.forEach((track) => {
-                            if (!track.track) {
-                                const libraryTrack = libraryTracks.filter((libraryTrack) => track.trackId === libraryTrack.id);
-                                if (libraryTrack.length > 0) {
-                                    track.track = this.cloneLibrayItemToPlaylistItem(libraryTrack[0]);
-                                }
-                            }
-                        });
-                        return {
-                            playlist: playlist,
-                            tracks: tracksForPlaylist
-                        };
-                    }));
-                }, (error) => {
-                    reject(error);
-                });
-            }, (error) => {
-                reject(error);
-            });
-        });
+    async populatePlaylistTracks(playlists: IPlaylistSummary[]): Promise<IPlaylistDetail[]> {
+        const ytma = await this.login();
+        const playlistDetails: IPlaylistDetail[] = [];
+        for (let i = 0; i < playlists.length; i++) {
+            const playlist = playlists[i];
+            const playlistDetail = await ytma.getPlaylist(playlist.id, 10);
+            playlistDetails.push(playlistDetail);
+        }
+        return playlistDetails;
     }
 
     /**
-     * Clones the information returned from the library item and makes a compatible playlist item.
-     * 
-     * @param source The library item to clone into a playlist item.
-     * @returns The playlist item that was cloned from the library item.
-     */
-    cloneLibrayItemToPlaylistItem(source: pm.LibraryItem): pm.PlaylistTrack {
-        return {
-            album: source.album,
-            albumArtist: source.albumArtist,
-            albumArtRef: source.albumArtRef,
-            artist: source.artist,
-            artistArtRef: source.artistArtRef,
-            artistId: source.artistId,
-            composer: source.composer,
-            discNumber: source.discNumber,
-            durationMillis: source.durationMillis,
-            estimatedSize: source.estimatedSize,
-            genre: source.genre,
-            kind: source.kind,
-            nid: source.nid,
-            playCount: source.playCount,
-            storeId: source.storeId,
-            title: source.title,
-            trackNumber: source.trackNumber,
-            year: source.year
-        };
-    }
-
-    /**
-     * Retrieves or create the playlist with the specified name. If the playlist already exists, then any existing
+     * Retrieves or creates the playlist with the specified name. If the playlist already exists, then any existing
      * tracks will be removed from the playlist to guarantee that an empty playlist will be returned.
      * 
      * @param playlistName The name of the playlist to get or create.
@@ -220,102 +86,56 @@ export default class PlayMusicCache {
      * before continuing on. This should allow Google enough time to propagate the track removals.
      * @returns A promise that will resolve to the empty playlist.
      */
-    async getOrCreatePlaylist(playlistName: string, deleteTimeoutMillis: number = 30000): Promise<pm.PlaylistListItem> {
-        return new Promise<pm.PlaylistListItem>((resolve, reject) => {
-            this.getPlaylistsByName([playlistName]).then((playlists) => {
-                this.populatePlaylistTracks(playlists).then((newPlaylists) => {
-                    const tracksToRemove = Utils.flattenArray<pm.PlaylistItem>(newPlaylists.map(playlist => playlist.tracks));
-                    const ids = tracksToRemove.map(track => track.id);
-                    if (ids.length === 0) {
-                        resolve(playlists[0]);
-                    } else {
-                        this.pm.removePlayListEntry(ids, (error, data) => {
-                            if (error) {
-                                reject("The playlist could not be cleared of existing tracks: " + playlistName);
-                            } else {
-                                setTimeout(() => {
-                                    resolve(playlists[0]);
-                                }, deleteTimeoutMillis);
-                            }
-                        });
+    async getOrCreatePlaylist(playlistName: string, deleteTimeoutMillis: number = 30000): Promise<IPlaylistDetail> {
+        const ytma = await this.login();
+        try {
+            const playlists = await this.getPlaylistsByName([playlistName]);
+            const playlistDetails = await this.populatePlaylistTracks(playlists);
+            if (Array.isArray(playlistDetails) && playlistDetails.length === 1) {
+                const playlist = playlistDetails[0];
+                if (playlist) {
+                    if (playlist.tracks.length > 0) {
+                        await ytma.removeTracksFromPlaylist(playlist.id, ...playlist.tracks);
                     }
-                }, (error) => {
-                    reject(error);
-                });
-            }, (error) => {
-                this.pm.addPlayList(playlistName, (error, data) => {
-                    if (error) {
-                        reject("The playlist could not be created: " + playlistName);
-                    } else {
-                        this.cache.playlists = undefined;
-                        this.getOrCreatePlaylist(playlistName).then((playlist) => {
-                            resolve(playlist);
-                        }, (error) => {
-                            reject(error);
-                        });
-                    }
-                });
-            });
-        });
+                    return playlist;
+                }
+            }
+        } catch {
+            // Eat any errors in case the playlist doesn't exist
+        }
+        const newPlaylist = await ytma.createPlaylist(playlistName);
+        const newPlaylistDetails = await this.populatePlaylistTracks([newPlaylist]);
+        if (Array.isArray(newPlaylistDetails) && newPlaylistDetails.length === 1) {
+            return newPlaylistDetails[0];
+        }
+        return undefined;
     }
 
     /**
      * Adds the specified array of tracks to the given playlist.
      * 
-     * @param playlist The playlist to add the tracks to.
+     * @param playlistId The ID of the playlist to add the tracks to.
      * @param tracks The array of tracks to add to the playlist.
-     * @returns A promise that will resolve when the tracks have been added to the playlist.
+     * @returns A promise that will yield whether or not the operation was successful.
      */
-    async addTracksToPlaylist(playlist: pm.PlaylistListItem, tracks: pm.PlaylistItem[]): Promise<pm.MutateResponses> {
-        return new Promise<pm.MutateResponses>((resolve, reject) => {
-            const trackIds = tracks.map((track) => track.trackId);
-            this.pm.addTrackToPlayList(trackIds, playlist.id, (error, data) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+    async addTracksToPlaylist(playlistId: string, tracks: ITrackDetail[]): Promise<boolean> {
+        const ytma = await this.login();
+        return await ytma.addTracksToPlaylist(playlistId, ...tracks);
     }
 
     /**
-     * Logs into the play music API with the specified email and password. The playlists and associated tracks will
-     * be correlated with the user that has logged in via this function call.
+     * Logs into the YouTube Music API. The playlists and associated tracks will
+     * be correlated with the user that has logged in.
      * 
-     * @param email The email address of the user to login with.
-     * @param password The password of the user to login with.
      * @returns A promise that will resolve when the user has logged in.
      */
-    async login(email: string, password: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.pm.init({ email: email, password: password }, (error) => {
-                if (error) {
-                    reject("Authentication failed. Please check the email and password supplied.");
-                } else {
-                    resolve(undefined);
-                }
-            });
-        });
-    }
-
-    /**
-     * Logs into the play music API with the specified android ID and token. The playlists and associated tracks will
-     * be correlated with the user that has logged in via this function call.
-     * 
-     * @param androidId The Android device ID to login with.
-     * @param token A pre-authorized token for the device ID to login with.
-     * @returns A promise that will resolve when the user has logged in.
-     */
-    async loginWithToken(androidId: string, token: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.pm.init({ androidId: androidId, masterToken: token }, (error) => {
-                if (error) {
-                    reject("Authentication failed. Please check the android ID and master token supplied.");
-                } else {
-                    resolve(undefined);
-                }
-            });
-        });
+    async login(): Promise<IYouTubeMusicAuthenticated> {
+        if (this.ytma) {
+            return this.ytma;
+        }
+        const ytm = new YouTubeMusic();
+        const ytma = await ytm.authenticate(this.cookiesStr);
+        this.ytma = ytma;
+        return this.ytma;
     }
 }

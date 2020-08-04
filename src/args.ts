@@ -1,10 +1,8 @@
 import * as argv from "argv";
-import * as Utils from "./utils";
 
 class Args {
     maxTracksPerPlaylist: number;
-    androidId: string;
-    token: string;
+    cookie: string;
     overwrite: boolean;
     singlePlaylist: boolean;
     input: string[];
@@ -12,16 +10,14 @@ class Args {
 
     constructor() {
         const args = argv
-            .option({ name: "androidId", short: "a", type: "string" })
-            .option({ name: "token", short: "t", type: "string" })
+            .option({ name: "cookie", short: "c", type: "string" })
             .option({ name: "input", short: "i", type: "list,string" })
             .option({ name: "output", short: "o", type: "list,string" })
             .option({ name: "overwrite", type: "boolean" })
             .option({ name: "maxTracksPerPlaylist", short: "m", type: "number" })
             .option({ name: "singlePlaylist", type: "boolean" })
             .run();
-        this.androidId = args.options["androidId"];
-        this.token = args.options["token"];
+        this.cookie = args.options["cookie"];
         this.input = args.options["input"];
         this.output = args.options["output"];
         this.overwrite = args.options["overwrite"] === true;
@@ -31,12 +27,8 @@ class Args {
     }
 
     validate(): void {
-        if (!this.androidId) {
-            console.error("The -a or --androidId argument must be supplied.");
-            process.exit();
-        }
-        if (!this.token) {
-            console.error("The -t or --token argument must be supplied.");
+        if (!this.cookie) {
+            console.error("The -c or --cookie argument must be supplied.");
             process.exit();
         }
         if (!this.input) {
