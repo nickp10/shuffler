@@ -3,7 +3,7 @@ const webpack = require("webpack");
 
 module.exports = {
     entry: {
-        main: path.resolve(__dirname, "./src/index.ts")
+        index: path.resolve(__dirname, "./src/index.ts")
     },
     externals: [
         /^[a-z\-0-9]+$/ // Exclude node_modules
@@ -13,7 +13,7 @@ module.exports = {
     },
     target: "node",
     output: {
-        filename: "index.js",
+        filename: "[name].js",
         libraryTarget: "commonjs"
     },
     module: {
