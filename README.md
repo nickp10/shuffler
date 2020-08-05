@@ -21,13 +21,13 @@ _Note: I do not plan on making this end-user friendly with a GUI._
     * Manual install: http://www.nodejs.org
     * Chocolatey (for Windows): `choco install nodejs.install`
 1. In the root directory of the module, run: `npm install`
-1. Run the script `node build/index.js -c <COOKIE> -i <PLAYLIST>`
+1. Run the script `node build/index.js -c <COOKIE-STRING> -i <PLAYLIST>`
 
 Script Options
 ----
 **-c / --cookie**
 
-_Required._ Specifies your YouTube Music cookie to login with. 
+_Required._ Specifies the COOKIE string request header from a valid authenticated YouTube Music request.
 
 
 **-i / --input**
@@ -54,4 +54,4 @@ _Optional._ Defaults to false. This flag specifies that only one playlist will b
 
 Attribution
 ----
-Thanks to the [youtube-music-ts-api](https://github.com/nickp10youtube-music-ts-api) node module for making this script possible.
+Thanks to the [youtube-music-ts-api](https://github.com/nickp10/youtube-music-ts-api) node module for making this script possible.
