@@ -1,7 +1,7 @@
 {
   "name": "shuffler",
   "version": "2.0.0",
-  "description": "Shuffles multiple Google Play Music playlists together",
+  "description": "Shuffles multiple YouTube Music playlists together",
   "bin": "build/index.js",
   "main": "build/index.js",
   "files": [
@@ -25,19 +25,19 @@
   },
   "dependencies": {
     "argv": "^0.0.3",
-    "core-js": "^3.47.0",
+    "core-js": "^3.48.0",
     "regenerator-runtime": "^0.14.1",
     "youtube-music-ts-api": "^1.8.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.5",
-    "@babel/preset-env": "^7.28.5",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
     "@types/argv": "^0.0.8",
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.2.3",
     "babel-loader": "^10.0.0",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
-    "webpack": "^5.103.0",
+    "webpack": "^5.105.1",
     "webpack-cli": "^6.0.1",
     "webpack-merge": "^6.0.1"
   }
